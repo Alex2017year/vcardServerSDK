@@ -28,6 +28,5 @@ public class ChannelInitializerHandler extends ChannelInitializer<SocketChannel>
         pipeline.addLast("heartBeatHandler", new HeartBeatRespHandler());
         // 接收消息处理handler
         pipeline.addLast(new NettyServerHandler());
-
     }
 }

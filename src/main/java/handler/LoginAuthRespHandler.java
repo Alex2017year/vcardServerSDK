@@ -1,6 +1,5 @@
 package handler;
 
-import com.sun.corba.se.pept.protocol.ProtocolHandler;
 import global.Command;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
@@ -21,14 +20,14 @@ public class LoginAuthRespHandler extends ChannelHandlerAdapter {
         VCardMessage loginResp = null;
         if (message.getHeader().getControlCode() == Command.REGISTER_REQ) {
             if (ProtocolHandler.getInstance().find(ctx.channel()) != null) {
+                // 重复登陆，需要把信息上报给应用层，告知，并且告知客户端
+                ProtocolHandler.getInstance().reportClientMsg(ctx.channel(), "Error: Repeated Login!");
 
                 // 重复登陆
-                // 重复登陆，需要把信息上报给应用层，告知，并且告知客户端
                 loginResp = buildResponse();
             } else {
                 // 新增设备
                 ProtocolHandler.getInstance().addNewDevice(ctx.channel(), message);
-
                 // 此处需要统一进行处理比较稳妥
                 // 统一构建一个response处理方法
                 //  TODO: 统一写一个response的响应

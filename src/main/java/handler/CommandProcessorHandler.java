@@ -1,13 +1,16 @@
 package handler;
 
-import global.Command;
 import interfaces.CommandCallbackAdapter;
 import interfaces.ICommandProcessor;
+import server.IServerHandler;
 
 public class CommandProcessorHandler implements ICommandProcessor {
 
-    public CommandProcessorHandler() {
+    // 用于发送命令请求信息
+    private IServerHandler mHandler;
 
+    public CommandProcessorHandler(IServerHandler handler) {
+        mHandler = handler;
     }
 
     @Override

@@ -1,6 +1,8 @@
 package codec;
 
+import bean.DeviceData;
 import global.config.ConfigInfo;
+import handler.ProtocolHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -45,7 +47,6 @@ public class VCardMessageDecoder extends LengthFieldBasedFrameDecoder {
     protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
         if (in == null || in.readableBytes() < MIX_SIZE)
             return null;
-
         ByteBuf frame = (ByteBuf) super.decode(ctx, in);
 
         // 首先，需要进行解密
@@ -97,7 +98,6 @@ public class VCardMessageDecoder extends LengthFieldBasedFrameDecoder {
         message.setAppData(body);
 
         // 忽略response中的crc16校验码
-
         return message;
     }
 

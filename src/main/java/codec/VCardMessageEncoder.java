@@ -1,16 +1,17 @@
 package codec;
 
-import com.lingyan.bean.DeviceData;
-import com.lingyan.global.config.ConfigInfo;
-import com.lingyan.handler.ProtocolHandler;
-import com.lingyan.protocol.MessageHeader;
-import com.lingyan.protocol.VCardMessage;
-import com.lingyan.utils.BufferUtil;
-import com.lingyan.utils.cryption.CRC16Util;
-import com.lingyan.utils.cryption.Pkcs7Encoder;
+
+import bean.DeviceData;
+import global.config.ConfigInfo;
+import handler.ProtocolHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
+import protocol.MessageHeader;
+import protocol.VCardMessage;
+import utils.BufferUtil;
+import utils.cryption.CRC16Util;
+import utils.cryption.Pkcs7Encoder;
 
 public class VCardMessageEncoder extends MessageToByteEncoder<VCardMessage> {
     @Override

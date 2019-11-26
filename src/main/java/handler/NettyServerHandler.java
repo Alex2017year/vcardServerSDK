@@ -17,7 +17,7 @@ public class NettyServerHandler extends SimpleChannelInboundHandler<VCardMessage
 
         // add device data to handler
         // 把所有数据处理交给 ProtocolHandler 类进行处理
-        ProtocolHandler.getInstance().dealDeviceData(channel, vcardMessage);
+        ProtocolHandler.getInstance().dealWithDeviceData(channel, vcardMessage);
     }
 
     @Override
