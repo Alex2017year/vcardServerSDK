@@ -67,7 +67,9 @@ public interface ICommandProcessor {
 
     // 设备参数设置
     // 确定对外接口
-    CommandParameterCheck requestDeviceId(int deviceId, CommandCallbackAdapter callbackAdapter);
+    // CommandParameterCheck requestDeviceId(int deviceId, CommandCallbackAdapter callbackAdapter); // 这个命令不对外开发，由服务器内部触发
+
+
     CommandParameterCheck requestDeviceBaseInfo(int deviceId, CommandCallbackAdapter callbackAdapter);
     CommandParameterCheck requestSetDeviceAlias(int deviceId, String deviceAlias, CommandCallbackAdapter callbackAdapter);
     CommandParameterCheck requestDeviceStatus(int deviceId, CommandCallbackAdapter callbackAdapter);

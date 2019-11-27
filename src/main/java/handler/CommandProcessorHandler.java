@@ -1,14 +1,17 @@
 package handler;
 
+import bean.VCardDevice;
+import global.Commands;
 import interfaces.CommandCallbackAdapter;
 import interfaces.ICommandProcessor;
+import protocol.MessageHeader;
 import protocol.VCardMessage;
 
 public class CommandProcessorHandler implements ICommandProcessor {
 
     // command type or client request type
     enum CommandType {
-        GET_DEVICE_ID_CMD(1),
+        // GET_DEVICE_ID_CMD(1),
         GET_DEVICE_BASE_INFO_CMD(2),
         SET_DEVICE_ALIAS_CMD(3),
         GET_DEVICE_STATUS_CMD(4),
@@ -74,14 +77,34 @@ public class CommandProcessorHandler implements ICommandProcessor {
     public CommandProcessorHandler() {
     }
 
+    /*
     @Override
     public CommandParameterCheck requestDeviceId(int deviceId, CommandCallbackAdapter callback) {
+        if(deviceId < 0) return CommandParameterCheck.PARATER_ERROR;
+
+        // 直接在这里进行数据的封装
+        VCardMessage cmd;
+
 
         return CommandParameterCheck.NORMAL;
-    }
+    }*/
 
     @Override
     public CommandParameterCheck requestDeviceBaseInfo(int deviceId, CommandCallbackAdapter callback) {
+        if (deviceId <= 0) return CommandParameterCheck.PARATER_ERROR;
+
+        VCardDevice cardDevice = ProtocolHandler.getInstance().find(deviceId);
+        if (cardDevice == null) return CommandParameterCheck.DEVICE_NOT_FOUND;
+
+        VCardMessage cmd = new VCardMessage();
+        MessageHeader header = new MessageHeader();
+        header.setControlCode(Commands.GET_DEVICE_BASE_INFO_CMD);
+        header.setDeviceId(deviceId);
+        header.setInfoCode(MessageHeader.MessageType.SERVER_SENDER, cardDevice.nextCmdSequence());
+
+        cmd.setAppData(null);
+        cmd.setHeader(header);
+
         return CommandParameterCheck.NORMAL;
     }
 
@@ -95,14 +118,59 @@ public class CommandProcessorHandler implements ICommandProcessor {
         return CommandParameterCheck.NORMAL;
     }
 
-    private VCardMessage encodeCommand(CommandType cmdType) {
-        switch (cmdType) {
-            case GET_DEVICE_ID_CMD: {
-                
-                break;
-            }
-        }
-
+    @Override
+    public CommandParameterCheck requestSystemConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter) {
         return null;
     }
+
+    @Override
+    public CommandParameterCheck requestSystemAllConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestReadSystemAllConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestSetSystemTime(int deviceId, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestInitializeDevice(int deviceId, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestUpdateApplication(int deviceId, boolean forceUpdate, short version, String md5, String url, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestSetOrCodeUrl(int deviceId, String url, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestGetApplicationKey(int deviceId, short funId, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestSetApplicationKey(int deviceId, short funId, String key, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestSetUploadAddress(int deviceId, short funId, String url, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
+    @Override
+    public CommandParameterCheck requestGetUploadAddress(int deviceId, short funId, CommandCallbackAdapter callbackAdapter) {
+        return null;
+    }
+
 }

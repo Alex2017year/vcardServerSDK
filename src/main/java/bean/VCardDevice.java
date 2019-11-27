@@ -9,6 +9,7 @@ import protocol.VCardMessage;
 
 import java.net.InetSocketAddress;
 import java.util.Deque;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -31,6 +32,10 @@ public class VCardDevice {
     private Constants.ConnectionStatus status; // 设备的通信状态
     private byte[] keyIV; // 16个字节的密钥向量
     private ICommandCallback commandResponseCallback; // 回调给命令调用者
+    private short cmdSequence; // 命令序列号
+
+    // 外界发送命令与其回调
+    private Map<VCardMessage, ICommandCallback> cmdMapToCallback;
 
     private Deque<VCardMessage> commandList; // 命令队列，接收外界的命令请求的缓存队列
     VCardMessage currentCommand; // 当前的命令，还未进行确认的命令
@@ -54,6 +59,13 @@ public class VCardDevice {
     public void updateStatus(Constants.ConnectionStatus status) {
         setStatus(status);
 
+    }
+
+    // 返回下一个命令序列号
+    public short nextCmdSequence() {
+        cmdSequence++;
+        if (cmdSequence == Short.MAX_VALUE) cmdSequence = 0;
+        return cmdSequence;
     }
 
     @Override
@@ -130,5 +142,15 @@ public class VCardDevice {
 
     public ICommandCallback getCommandResponseCallback() {
         return this.commandResponseCallback;
+    }
+
+    // 这样做会出现问题的
+    public boolean putCmd(VCardMessage cmd, ICommandCallback callback) {
+        if (cmdMapToCallback.get(cmd) != null) {
+            cmdMapToCallback.put(cmd, callback);
+            return true;
+        }
+
+        return false;
     }
 }

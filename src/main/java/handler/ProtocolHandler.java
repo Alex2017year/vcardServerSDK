@@ -5,6 +5,7 @@ import bean.VCardDevice;
 import bean.IPAddressPair;
 import global.Constants;
 import interfaces.IClientStatusListener;
+import interfaces.ICommandCallback;
 import io.netty.channel.Channel;
 import protocol.VCardMessage;
 
@@ -75,6 +76,11 @@ public class ProtocolHandler implements IProtocolHandler {
     }
 
     @Override
+    public VCardDevice find(int deviceId) {
+        return deviceTable.get(deviceId);
+    }
+
+    @Override
     public void addNewDevice(Channel channel, VCardMessage message) {
         // 首次出现的设备
         if (!channelDeviceIdTable.containsKey(channel)) {
@@ -142,5 +148,18 @@ public class ProtocolHandler implements IProtocolHandler {
         // 开始发送数据
         deviceTable.get(deviceId).getChannel().writeAndFlush(telegram);
         return true;
+    }
+
+    @Override
+    public boolean sendCommand(VCardMessage cmd, ICommandCallback callback) {
+        if (cmd == null || cmd.getHeader() == null)
+            return false;
+
+        VCardDevice cardDevice = deviceTable.get(cmd.getHeader().getDeviceId());
+        if (cardDevice == null || cardDevice.getStatus() == Constants.ConnectionStatus.COM_FAILED)
+            return false;
+
+        // 将数据保存到队列中
+        return cardDevice.putCmd(cmd, callback);
     }
 }
