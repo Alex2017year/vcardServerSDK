@@ -1,6 +1,6 @@
 package codec;
 
-import bean.DeviceData;
+import bean.VCardDevice;
 import global.config.ConfigInfo;
 import handler.ProtocolHandler;
 import io.netty.buffer.ByteBuf;
@@ -55,10 +55,10 @@ public class VCardMessageDecoder extends LengthFieldBasedFrameDecoder {
 
         // 查看是否相应的ivs
         byte[] ivs = null;
-        DeviceData dd = ProtocolHandler.getInstance().find(ctx.channel());
+        VCardDevice dd = ProtocolHandler.getInstance().find(ctx.channel());
         if (dd == null) {
             ivs = BufferUtil.lastBytes(bytes, ConfigInfo.IVS_COUNT);
-            dd = new DeviceData();
+            dd = new VCardDevice();
             dd.setKeyIV(ivs);
         } else {
             ivs = dd.getKeyIV();

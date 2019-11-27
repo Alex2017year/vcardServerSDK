@@ -9,7 +9,7 @@ import protocol.VCardMessage;
 public class NettyServerHandler extends SimpleChannelInboundHandler<VCardMessage> {
 
     // data for all known remote devices
-    // private Map<Integer, DeviceData> devices = new ConcurrentHashMap<>();
+    // private Map<Integer, VCardDevice> devices = new ConcurrentHashMap<>();
 
     @Override
     protected void messageReceived(ChannelHandlerContext channelHandlerContext, VCardMessage vcardMessage) throws Exception {

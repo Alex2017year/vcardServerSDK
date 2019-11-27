@@ -3,7 +3,6 @@ package server;
 import bean.IPAddressPair;
 import handler.ChannelInitializerHandler;
 import handler.CommandProcessorHandler;
-import handler.IProtocolHandler;
 import handler.ProtocolHandler;
 import interfaces.IClientStatusListener;
 import interfaces.ICommandProcessor;
@@ -115,7 +114,7 @@ public class NettyServer implements INettyServer, IServerHandler {
         // 初始化请求处理器
         ProtocolHandler.getInstance().initialize(listener);
         // 初始化命令处理器
-        mCommandProcessor = new CommandProcessorHandler(this);
+        mCommandProcessor = new CommandProcessorHandler();
 
         try {
             init();

@@ -1,7 +1,7 @@
 package codec;
 
 
-import bean.DeviceData;
+import bean.VCardDevice;
 import global.config.ConfigInfo;
 import handler.ProtocolHandler;
 import io.netty.buffer.ByteBuf;
@@ -19,7 +19,7 @@ public class VCardMessageEncoder extends MessageToByteEncoder<VCardMessage> {
         if (vCardMessage == null || vCardMessage.getHeader() == null)
             throw new Exception("The encode message is null");
 
-        DeviceData dd = ProtocolHandler.getInstance().find(channelHandlerContext.channel());
+        VCardDevice dd = ProtocolHandler.getInstance().find(channelHandlerContext.channel());
         if (dd == null || dd.getKeyIV() == null) {
             return;
         }

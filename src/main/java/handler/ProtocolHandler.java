@@ -1,7 +1,7 @@
 package handler;
 
 
-import bean.DeviceData;
+import bean.VCardDevice;
 import bean.IPAddressPair;
 import global.Constants;
 import interfaces.IClientStatusListener;
@@ -30,11 +30,16 @@ public class ProtocolHandler implements IProtocolHandler {
     // private BlockingQueue<VCardEvent> events = new LinkedBlockingQueue<>();
 
     // 设备信息表
-    // deviceId <---> DeviceData
-    private Map<Integer, DeviceData> deviceTable = new ConcurrentHashMap<>();
+    // deviceId <---> VCardDevice
+    private Map<Integer, VCardDevice> deviceTable = new ConcurrentHashMap<>();
 
-    // channel <---> DeviceData
-    private Map<Channel, DeviceData> channelDeviceIdTable = new ConcurrentHashMap<>();
+    // 设备ID映射到对应的channel
+    // deviceId <---> channel
+    // 根据相关的deviceId查询相应的通道
+    private Map<Integer, Channel> channelMap = new ConcurrentHashMap<>();
+
+    // channel <---> VCardDevice
+    private Map<Channel, VCardDevice> channelDeviceIdTable = new ConcurrentHashMap<>();
 
     // SDK提供的回调，用于报告client的建立连接/连接丢失/其他信息等
     private IClientStatusListener mListener;
@@ -54,7 +59,7 @@ public class ProtocolHandler implements IProtocolHandler {
     @Override
     public void removeBadDevice(Channel channel) {
         if (channelDeviceIdTable.containsKey(channel)) {
-            DeviceData dd = channelDeviceIdTable.remove(channel);
+            VCardDevice dd = channelDeviceIdTable.remove(channel);
             if (deviceTable.containsKey(dd.getDeviceId())) {
                 deviceTable.remove(dd.getDeviceId());
             }
@@ -62,7 +67,7 @@ public class ProtocolHandler implements IProtocolHandler {
     }
 
     @Override
-    public DeviceData find(Channel channel) {
+    public VCardDevice find(Channel channel) {
         if (channelDeviceIdTable.containsKey(channel)) {
             return channelDeviceIdTable.get(channel);
         }
@@ -73,21 +78,21 @@ public class ProtocolHandler implements IProtocolHandler {
     public void addNewDevice(Channel channel, VCardMessage message) {
         // 首次出现的设备
         if (!channelDeviceIdTable.containsKey(channel)) {
-            DeviceData deviceData = new DeviceData(message.getHeader().getDeviceId());
-            deviceData.setStatus(Constants.ConnectionStatus.HEALTHY);
+            VCardDevice vcardDevice = new VCardDevice(message.getHeader().getDeviceId());
+            vcardDevice.setStatus(Constants.ConnectionStatus.HEALTHY);
 
-            deviceData.setChannel(channel);
+            vcardDevice.setChannel(channel);
             InetSocketAddress address = (InetSocketAddress) channel.localAddress();
-            deviceData.setCurIPAddress(new IPAddressPair(address.getHostName(), address.getPort()));
+            vcardDevice.setCurIPAddress(new IPAddressPair(address.getHostName(), address.getPort()));
 
-            channelDeviceIdTable.put(channel, deviceData);
-            deviceTable.put(deviceData.getDeviceId(), deviceData);
+            channelDeviceIdTable.put(channel, vcardDevice);
+            deviceTable.put(vcardDevice.getDeviceId(), vcardDevice);
 
 
             // 通用API调用者，新增设备出现了
             // 但是此时设备的ID还是0，所以
             mListener.onAddDevice(channelDeviceIdTable.get(channel).getDeviceId());
-            // setData(new VCardEvent(deviceData.getDeviceId(), message, true));
+            // setData(new VCardEvent(vcardDevice.getDeviceId(), message, true));
         }
     }
 
@@ -96,19 +101,19 @@ public class ProtocolHandler implements IProtocolHandler {
     public void dealWithDeviceData(Channel channel, VCardMessage message) {
         int deviceId = message.getHeader().getDeviceId();
         if (deviceTable.containsKey(deviceId)) {
-            DeviceData deviceData = deviceTable.get(deviceId);
-            if (deviceData.getStatus() == Constants.ConnectionStatus.COM_FAILED) {
+            VCardDevice vcardDevice = deviceTable.get(deviceId);
+            if (vcardDevice.getStatus() == Constants.ConnectionStatus.COM_FAILED) {
                 // 设备的上一次状态是com_failed, 所以这次必须触发一个登陆请求
                 return;
             }
 
-            deviceData.setStatus(Constants.ConnectionStatus.HEALTHY);
-            if (deviceData.getChannel() != channel) {
+            vcardDevice.setStatus(Constants.ConnectionStatus.HEALTHY);
+            if (vcardDevice.getChannel() != channel) {
                 // log("")
                 // 某个设备通道变化了，说明IP和port变化，需要及时更新
-                deviceData.setChannel(channel);
+                vcardDevice.setChannel(channel);
                 InetSocketAddress address = (InetSocketAddress) channel.localAddress();
-                deviceData.setCurIPAddress(new IPAddressPair(address.getHostName(), address.getPort()));
+                vcardDevice.setCurIPAddress(new IPAddressPair(address.getHostName(), address.getPort()));
             }
 
             // 更新设备状态

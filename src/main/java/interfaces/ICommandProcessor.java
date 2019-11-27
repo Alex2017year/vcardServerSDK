@@ -1,6 +1,16 @@
 package interfaces;
 
 public interface ICommandProcessor {
+
+    enum CommandParameterCheck {
+        NORMAL(0),
+        DEVICE_NOT_FOUND(1),
+        PARATER_ERROR(2);
+
+        private int value;
+        CommandParameterCheck(int value) { this.value = value; }
+    }
+
     enum KeyFunId {
         CARD_READER_KEY(0), // 读卡器密钥
         QR_CODE_KEY(1), // 二维码密钥
@@ -57,8 +67,37 @@ public interface ICommandProcessor {
 
     // 设备参数设置
     // 确定对外接口
-    void requestDeviceId(int deviceId, CommandCallbackAdapter callback);
-    void requestDeviceBaseInfo(int deviceId, CommandCallbackAdapter callback);
-    void requestSetDeviceAlias(int deviceId, String deviceAlias, CommandCallbackAdapter callback);
-    void requestDeviceStatus(int deviceId, CommandCallbackAdapter callback);
+    CommandParameterCheck requestDeviceId(int deviceId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestDeviceBaseInfo(int deviceId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestSetDeviceAlias(int deviceId, String deviceAlias, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestDeviceStatus(int deviceId, CommandCallbackAdapter callbackAdapter);
+
+    // set different system configurations
+    CommandParameterCheck requestSystemConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestSystemAllConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter);
+
+    // 读取系统配置
+    CommandParameterCheck requestReadSystemAllConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter);
+    // 设置系统时间
+    CommandParameterCheck requestSetSystemTime(int deviceId, CommandCallbackAdapter callbackAdapter);
+    // 初始化设备
+    CommandParameterCheck requestInitializeDevice(int deviceId, CommandCallbackAdapter callbackAdapter);
+
+    // 设备通信心跳 -- 这个设备主动发起，服务端被动响应（不向外界提供接口）
+
+    CommandParameterCheck requestUpdateApplication(int deviceId, boolean forceUpdate, short version, String md5, String url,CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestSetOrCodeUrl(int deviceId, String url, CommandCallbackAdapter callbackAdapter);
+
+    // 获取应用密钥
+    CommandParameterCheck requestGetApplicationKey(int deviceId, short funId, CommandCallbackAdapter callbackAdapter);
+
+    // 设置应用密钥
+    CommandParameterCheck requestSetApplicationKey(int deviceId, short funId, String key, CommandCallbackAdapter callbackAdapter);
+
+    // 设置上传地址
+    CommandParameterCheck requestSetUploadAddress(int deviceId, short funId, String url, CommandCallbackAdapter callbackAdapter);
+
+    // 获取上传地址
+    CommandParameterCheck requestGetUploadAddress(int deviceId, short funId, CommandCallbackAdapter callbackAdapter);
+    
 }

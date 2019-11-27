@@ -2,34 +2,107 @@ package handler;
 
 import interfaces.CommandCallbackAdapter;
 import interfaces.ICommandProcessor;
-import server.IServerHandler;
+import protocol.VCardMessage;
 
 public class CommandProcessorHandler implements ICommandProcessor {
 
-    // 用于发送命令请求信息
-    private IServerHandler mHandler;
+    // command type or client request type
+    enum CommandType {
+        GET_DEVICE_ID_CMD(1),
+        GET_DEVICE_BASE_INFO_CMD(2),
+        SET_DEVICE_ALIAS_CMD(3),
+        GET_DEVICE_STATUS_CMD(4),
+        SET_SYSTEM_CONFIGURATION_CMD(5),
+        GET_SYSTEM_CONFIGURATION(6),
+        SET_SYSTEM_TIME(7),
+        INITIALIZATION_DEVICE(8),
+        DEVICE_HEARTBEAT_COMMUNICATION(9),
+        UPDATE_APPLICATION(10),
+        SET_QRCODE_URL(11),
+        SET_APPLICATION_SECRET_KEY(12),
+        GET_APPLICATION_SECRET_KEY(13),
+        SET_UPLOAD_ADDRESS(14),
+        GET_UPLOAD_ADDRESS(15),
+        RELAY_CONTROL_REMOTE_DOOR(16),
+        DEVICE_LOCK(17),
+        RESTART_DEVICE(18),
+        LOCAL_SET_LOCK(19),
+        RELAY_CONTROL_REMOTE_DOOR_WITH_ORCODE(20),
+        RELAY_CONTROL_REMOTE_DOOR_WITH_USER(21),
+        CLEAR_ALL_AUTHORIZATION_CARD(22),
+        READ_SINGLE_AUTHORIZATION_CARD(23),
+        ADD_AUTHORIZATION_CARD(24),
+        DELETE_AUTHORIZATION_CARD(25),
+        PUSH_TRAFFIC_RECORD(26),
+        PUSH_EVENT(27),
+        REPUBLISH_TRAFFIC_RECORD(28),
+        REPUBLISH_EVENT(29),
+        GET_SDK_INFO(30),
+        SET_FACE_IDENTIFICATION_CONFIGURATION(31),
+        GET_FACE_IDENTIFICATION_CONFIGURATION(32),
+        DELETE_FACE_INFO(33),
+        DOWNLOAD_SDK_AUTHORIZATION_INFO(34),
+        ADD_BACKLIST_SINGLE_FACE(35),
+        ADD_AUTHORIZATION_FACE(36),
+        SEND_TEXT_DATA(37),
+        DELETE_TEXT_DATA(38),
+        DOWNLOAD_MULTIMEDIA_DATA(39),
+        DELETE_MULTIMEDIA_DATA(40),
+        SCREENSAVER_SWITCH(41),
+        SET_SCREENSAVER_CAROUSEL(42),
+        SEND_MULTIMEDIA_DATA(43),
+        SEND_TRAFFICE_SNAPSHOT_(44),
+        SEND_BACKLIST_SNAPSHOT(45),
+        SEND_RECORD_TEXT(46),
+        SEND_STRANGER_FACE_SNAPSHOT(47),
+        SEND_DOORBELL_SNAPSHOT(48),
+        SEND_AUTHORIZED_OFFICER_PASSWORD(49),
+        DELETE_AUTHORIZED_OFFICER_PASSWORD(50),
+        GET_RANDOM_OPEN_PASSWORD(51),
+        OPEN_TOKEN_PASSWORD(52),
+        CLOSE_TOKEN_PASSWORD(53),
+        SET_UI_CONFIGURATION(54),
+        GET_UI_CONFIGURATION(55),
+        SCENE_RESOURCE_CONFIGGURATION(56),
+        SCENE_STATUS_CONTROL(57),
+        SET_DEVICE_TITLE(58);
 
-    public CommandProcessorHandler(IServerHandler handler) {
-        mHandler = handler;
+        private int value;
+        CommandType(int value) { this.value = value; }
+    }
+
+    public CommandProcessorHandler() {
     }
 
     @Override
-    public void requestDeviceId(int deviceId, CommandCallbackAdapter callback) {
+    public CommandParameterCheck requestDeviceId(int deviceId, CommandCallbackAdapter callback) {
 
+        return CommandParameterCheck.NORMAL;
     }
 
     @Override
-    public void requestDeviceBaseInfo(int deviceId, CommandCallbackAdapter callback) {
-
+    public CommandParameterCheck requestDeviceBaseInfo(int deviceId, CommandCallbackAdapter callback) {
+        return CommandParameterCheck.NORMAL;
     }
 
     @Override
-    public void requestSetDeviceAlias(int deviceId, String deviceAlias, CommandCallbackAdapter callback) {
-
+    public CommandParameterCheck requestSetDeviceAlias(int deviceId, String deviceAlias, CommandCallbackAdapter callback) {
+        return CommandParameterCheck.NORMAL;
     }
 
     @Override
-    public void requestDeviceStatus(int deviceId, CommandCallbackAdapter callback) {
+    public CommandParameterCheck requestDeviceStatus(int deviceId, CommandCallbackAdapter callback) {
+        return CommandParameterCheck.NORMAL;
+    }
 
+    private VCardMessage encodeCommand(CommandType cmdType) {
+        switch (cmdType) {
+            case GET_DEVICE_ID_CMD: {
+                
+                break;
+            }
+        }
+
+        return null;
     }
 }

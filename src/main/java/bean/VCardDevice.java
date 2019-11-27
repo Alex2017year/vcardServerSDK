@@ -1,18 +1,25 @@
 package bean;
 
 import global.Constants;
+import handler.IProtocolHandler;
+import handler.ProtocolHandler;
+import interfaces.ICommandCallback;
 import io.netty.channel.Channel;
 import protocol.VCardMessage;
 
 import java.net.InetSocketAddress;
+import java.util.Deque;
 import java.util.Objects;
 
-public class DeviceData {
+/**
+ * 该类对整个client做的抽象，提供
+ */
+public class VCardDevice {
 
     // 首次设置KeyIV时，不需要知道，其他信息
-    public DeviceData() { }
+    public VCardDevice() { }
 
-    public DeviceData(int deviceId) {
+    public VCardDevice(int deviceId) {
         this.deviceId = deviceId;
         this.status = Constants.ConnectionStatus.COM_FAILED;
     }
@@ -23,12 +30,37 @@ public class DeviceData {
     private IPAddressPair curIPAddress; // 可以向外界提供一个调试的方法；
     private Constants.ConnectionStatus status; // 设备的通信状态
     private byte[] keyIV; // 16个字节的密钥向量
+    private ICommandCallback commandResponseCallback; // 回调给命令调用者
+
+    private Deque<VCardMessage> commandList; // 命令队列，接收外界的命令请求的缓存队列
+    VCardMessage currentCommand; // 当前的命令，还未进行确认的命令
+
+    // 对外提供的一个接口：发送请求命令
+    public void sendCmd(VCardMessage cmd) {
+        ProtocolHandler.getInstance().sendData(cmd);
+    }
+
+    // 解析应用数据，向外提供，接收
+    public void decodeMessage(VCardMessage msg) {
+
+    }
+
+    // 收到device client response的命令进行确认，并发送下一个命令
+    public void acknowledgeCmd(VCardMessage msg) {
+
+    }
+
+    // 内部完成其他逻辑处理
+    public void updateStatus(Constants.ConnectionStatus status) {
+        setStatus(status);
+
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof DeviceData)) return false;
-        DeviceData that = (DeviceData) o;
+        if (!(o instanceof VCardDevice)) return false;
+        VCardDevice that = (VCardDevice) o;
         return getDeviceId() == that.getDeviceId() &&
                 Objects.equals(getPollTelegram(), that.getPollTelegram()) &&
                 Objects.equals(getChannel(), that.getChannel()) &&
@@ -90,5 +122,13 @@ public class DeviceData {
 
     public void setKeyIV(byte[] keyIV) {
         this.keyIV = keyIV;
+    }
+
+    public void setCommandResponseCallback(ICommandCallback commandResponseCallback) {
+        this.commandResponseCallback = commandResponseCallback;
+    }
+
+    public ICommandCallback getCommandResponseCallback() {
+        return this.commandResponseCallback;
     }
 }
