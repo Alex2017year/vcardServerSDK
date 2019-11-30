@@ -30,10 +30,7 @@ public class IPAddressPair {
 
     @Override
     public String toString() {
-        return "IPAddressPair{" +
-                "host='" + host + '\'' +
-                ", port=" + port +
-                '}';
+        return host + ":" + port;
     }
 
     @Override

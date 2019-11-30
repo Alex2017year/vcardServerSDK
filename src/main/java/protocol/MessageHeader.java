@@ -1,5 +1,7 @@
 package protocol;
 
+import java.util.Objects;
+
 public class MessageHeader {
 
     public static final int MAX_CMD_SEQUENCE = 0x7FFF; // 最大的命令序列号
@@ -95,5 +97,23 @@ public class MessageHeader {
                 ", infoCode=" + infoCode +
                 ", controlCode=" + controlCode +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof MessageHeader)) return false;
+        MessageHeader that = (MessageHeader) o;
+        return getDeviceId() == that.getDeviceId() &&
+                getLength() == that.getLength() &&
+                getInfoCode() == that.getInfoCode() &&
+                getCmdSequence() == that.getCmdSequence() &&
+                Objects.equals(getControlCode(), that.getControlCode()) &&
+                getMsgType() == that.getMsgType();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getDeviceId(), getLength(), getInfoCode(), getControlCode(), getMsgType(), getCmdSequence());
     }
 }

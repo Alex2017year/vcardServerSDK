@@ -1,5 +1,7 @@
 package protocol;
 
+import java.util.Objects;
+
 public class VCardMessage {
     private MessageHeader header; // 消息头
     private Object appData; // 消息体
@@ -32,5 +34,19 @@ public class VCardMessage {
         return "VCardMessage{" +
                 "header=" + header +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof VCardMessage)) return false;
+        VCardMessage that = (VCardMessage) o;
+        return getHeader().equals(that.getHeader()) &&
+                Objects.equals(getAppData(), that.getAppData());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHeader(), getAppData());
     }
 }

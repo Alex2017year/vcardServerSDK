@@ -1,9 +1,9 @@
 package handler;
 
-import com.lingyan.global.Command;
-import com.lingyan.protocol.VCardMessage;
+import global.Commands;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import protocol.VCardMessage;
 
 public class HeartBeatRespHandler extends ChannelHandlerAdapter {
     @Override
@@ -15,7 +15,7 @@ public class HeartBeatRespHandler extends ChannelHandlerAdapter {
             return;
         }
 
-        if (message.getHeader().getControlCode() == Command.HEARTBEAT_REQ) {
+        if (message.getHeader().getControlCode() == Commands.HEARTBEAT_REQ) {
 
             // 提取相应的客户端端数据，查看当前时间与服务器端时间一致
             VCardMessage heartBeat = null;

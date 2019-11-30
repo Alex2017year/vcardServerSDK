@@ -1,5 +1,6 @@
 package handler;
 
+import bean.ServerBaseInfo;
 import bean.VCardDevice;
 import interfaces.IClientStatusListener;
 import interfaces.ICommandCallback;
@@ -21,4 +22,8 @@ public interface IProtocolHandler {
     boolean sendData(VCardMessage telegram);
     boolean sendCommand(VCardMessage cmd, ICommandCallback callback);
 
+    // 设备注册的 response
+    ServerBaseInfo getServerBaseInfo();
+    void updateServerBaseInfo(short serverNo);
+    void updateServerBaseInfoWithOEMCode(String oemCode);
 }

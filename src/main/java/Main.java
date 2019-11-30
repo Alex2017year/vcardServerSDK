@@ -19,7 +19,7 @@ public class Main {
 
             // client建立起通信
             @Override
-            public void onAddDevice(int deviceId) {
+            public void onAddDevice(String deviceId) {
                 // do something
             }
 
@@ -35,7 +35,7 @@ public class Main {
         int deviceId = 9999;
         commandExecutor.requestDeviceBaseInfo(deviceId, new CommandCallbackAdapter() {
             @Override
-            public void process(int resultCode, Object response) {
+            public void process(DeviceBaseInfo response) {
                 // 做业务处理
             }
         });

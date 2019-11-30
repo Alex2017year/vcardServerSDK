@@ -5,7 +5,8 @@ public interface ICommandProcessor {
     enum CommandParameterCheck {
         NORMAL(0),
         DEVICE_NOT_FOUND(1),
-        PARATER_ERROR(2);
+        PARATER_ERROR(2),
+        FAILED_CONNECTION(3);
 
         private int value;
         CommandParameterCheck(int value) { this.value = value; }

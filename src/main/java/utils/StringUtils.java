@@ -59,8 +59,30 @@ public class StringUtils {
      *
      * @return
      */
-    public static int getRanNumber() {
+    public static int getRandInt() {
         return rand.nextInt(Integer.MAX_VALUE);
+    }
+
+    public static short getRandShort() {
+        return (short) rand.nextInt(Short.MAX_VALUE);
+    }
+
+
+    public static String changeToVersion(short originData) {
+        StringBuffer version = new StringBuffer(Integer.toHexString(originData));
+        if (version.length() % 2 != 0) {
+            version.insert(0, '0');
+        }
+
+        // 每隔两位插入 .
+        int oldLen = version.length();
+        for (int i = oldLen - 2; i > 0; i -= 2) {
+            version.insert(i, '.');
+        }
+
+        version.insert(0, "Ver ");
+
+        return version.toString();
     }
 
 }

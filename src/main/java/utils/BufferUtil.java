@@ -1,5 +1,9 @@
 package utils;
 
+import java.nio.ByteBuffer;
+
+import static java.lang.System.arraycopy;
+
 public class BufferUtil {
 
     public static byte[] subBytes(byte[] src, int startIdx, int count) {
@@ -46,6 +50,47 @@ public class BufferUtil {
 
         totalPacketLenght += 8;
         return totalPacketLenght;
+    }
+
+    public static byte[] long2Bytes(long srcNum) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.putLong(srcNum);
+        return buffer.array();
+    }
+
+    public static byte[] int2Bytes(int srcNum) {
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+        buffer.putInt(srcNum);
+        return buffer.array();
+    }
+
+    public static byte[] short2Bytes(short srcNum) {
+        ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES);
+        buffer.putShort(srcNum);
+        return buffer.array();
+    }
+
+    public static byte[] byte2Bytes(byte srcNum) {
+        ByteBuffer buffer = ByteBuffer.allocate(Byte.BYTES);
+        buffer.put(srcNum);
+        return buffer.array();
+    }
+
+    public static void putShort(byte[] b, short s, int index) {
+        b[index + 1] = (byte) (s >> 8);
+        b[index + 0] = (byte) (s >> 0);
+    }
+
+    public static void putInt(byte[] b, int x, int index) {
+        b[index + 3] = (byte) (x >> 24);
+        b[index + 2] = (byte) (x >> 16);
+        b[index + 1] = (byte) (x >> 8);
+        b[index + 0] = (byte) (x >> 0);
+    }
+
+    public static void putString(byte[] src, String str, int index) {
+        byte[] strBytes = str.getBytes();
+        arraycopy(src, index, strBytes, 0, strBytes.length);
     }
 
 }

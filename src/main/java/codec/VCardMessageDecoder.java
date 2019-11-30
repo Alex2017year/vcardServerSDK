@@ -94,8 +94,12 @@ public class VCardMessageDecoder extends LengthFieldBasedFrameDecoder {
 
         // 获取应用数据部分
         int len = frame.readableBytes() - (HEADER_SIZE + CRC_CODE_SIZE);
-        ByteBuf body = frame.copy(HEADER_SIZE, len);
-        message.setAppData(body);
+        if (len > 0) {
+            ByteBuf body = frame.copy(HEADER_SIZE, len);
+            message.setAppData(body);
+        } else {
+            message.setAppData(null);
+        }
 
         // 忽略response中的crc16校验码
         return message;

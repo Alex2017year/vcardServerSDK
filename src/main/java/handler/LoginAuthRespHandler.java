@@ -1,8 +1,11 @@
 package handler;
 
+import bean.ServerBaseInfo;
 import global.Commands;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import protocol.MessageHeader;
 import protocol.VCardMessage;
 
 public class LoginAuthRespHandler extends ChannelHandlerAdapter {
@@ -16,32 +19,40 @@ public class LoginAuthRespHandler extends ChannelHandlerAdapter {
             return;
         }
 
-        // 仅仅考虑注册请求
-        VCardMessage loginResp = null;
         if (message.getHeader().getControlCode() == Commands.REGISTER_REQ) {
+
+            // respond to device client.
+            VCardMessage loginResp = null;
+            loginResp = buildResponse(message);
+            ctx.writeAndFlush(loginResp);
+
+            // add device to ProtocolHandler object
             if (ProtocolHandler.getInstance().find(ctx.channel()) != null) {
                 // 重复登陆，需要把信息上报给应用层，告知，并且告知客户端
                 ProtocolHandler.getInstance().reportClientMsg(ctx.channel(), "Error: Repeated Login!");
-
-                // 重复登陆
-                loginResp = buildResponse();
             } else {
-                // 新增设备
                 ProtocolHandler.getInstance().addNewDevice(ctx.channel(), message);
-                // 此处需要统一进行处理比较稳妥
-                // 统一构建一个response处理方法
-                //  TODO: 统一写一个response的响应
-                loginResp = buildResponse();
             }
         }
-
-        // 最后把响应部分传递出去
-        ctx.writeAndFlush(loginResp);
     }
 
-    private VCardMessage buildResponse() {
+    private VCardMessage buildResponse(VCardMessage msg) {
 
-        return null;
+        VCardMessage response = new VCardMessage();
+        MessageHeader header = new MessageHeader();
+
+        header.setDeviceId(msg.getHeader().getDeviceId());
+        header.setInfoCode(MessageHeader.MessageType.SERVER_SENDER, msg.getHeader().getCmdSequence());
+        header.setControlCode(msg.getHeader().getControlCode());
+        response.setHeader(header);
+
+        ServerBaseInfo serverBaseInfo = ProtocolHandler.getInstance().getServerBaseInfo();
+        serverBaseInfo.updateTimestamp();
+        serverBaseInfo.updateRandom();
+        ByteBuf appData = serverBaseInfo.toByteBuf();
+        response.setAppData(appData);
+
+        return response;
     }
 
     @Override

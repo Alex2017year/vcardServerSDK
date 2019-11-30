@@ -25,11 +25,9 @@ public class VCardMessageEncoder extends MessageToByteEncoder<VCardMessage> {
         }
 
         MessageHeader header = vCardMessage.getHeader();
-        ByteBuf body = (ByteBuf) vCardMessage.getAppData();
+        Object appData = vCardMessage.getAppData();
 
-        // 开始计算长度
-        int len = BufferUtil.calcuatePacketLength(body.readableBytes());
-        header.setLength(len);
+        int len = 0;
 
         // 生成crc16检验码
         ByteBuf crcBuf = channelHandlerContext.channel().alloc().heapBuffer();
@@ -38,29 +36,59 @@ public class VCardMessageEncoder extends MessageToByteEncoder<VCardMessage> {
         crcBuf.writeShort(header.getInfoCode());
         crcBuf.writeByte(header.getControlCode().getCategoryCode());
         crcBuf.writeByte(header.getControlCode().getCommandCode());
-        crcBuf.writeBytes(body);
 
-        byte[] buf = new byte[crcBuf.readableBytes()];
-        crcBuf.readBytes(buf);
-        short crc16 = genCrc16Code(buf);
-        if (crc16 == 0) {
-            return;
-        }
 
         // 开始加密
         ByteBuf plaintextBuf = channelHandlerContext.channel().alloc().heapBuffer();
         plaintextBuf.writeShort(header.getInfoCode());
         plaintextBuf.writeByte(header.getControlCode().getCategoryCode());
         plaintextBuf.writeByte(header.getControlCode().getCommandCode());
-        plaintextBuf.writeBytes(body);
-        plaintextBuf.writeShort(crc16);
 
-        buf = new byte[plaintextBuf.readableBytes()];
-        plaintextBuf.readBytes(buf);
-        byte[] totalBuf = encrypt(buf, dd.getKeyIV());
+        if (appData != null) {
+            ByteBuf body = (ByteBuf) appData;
 
-        // 将加密后数据写入ByteBuf
-        sendBuf.writeBytes(totalBuf);
+            // 开始计算长度
+            len = BufferUtil.calcuatePacketLength(body.readableBytes());
+            header.setLength(len);
+            crcBuf.writeBytes(body);
+
+            byte[] buf = new byte[crcBuf.readableBytes()];
+            crcBuf.readBytes(buf);
+            short crc16 = genCrc16Code(buf);
+            if (crc16 == 0) {
+                return;
+            }
+
+            plaintextBuf.writeBytes(body);
+            plaintextBuf.writeShort(crc16);
+
+            buf = new byte[plaintextBuf.readableBytes()];
+            plaintextBuf.readBytes(buf);
+            byte[] totalBuf = encrypt(buf, dd.getKeyIV());
+
+            // 将加密后数据写入ByteBuf
+            sendBuf.writeBytes(totalBuf);
+
+        } else {
+            len = BufferUtil.calcuatePacketLength(0);
+            header.setLength(len);
+
+            byte[] buf = new byte[crcBuf.readableBytes()];
+            crcBuf.readBytes(buf);
+            short crc16 = genCrc16Code(buf);
+            if (crc16 == 0) {
+                return;
+            }
+
+            plaintextBuf.writeShort(crc16);
+
+            buf = new byte[plaintextBuf.readableBytes()];
+            plaintextBuf.readBytes(buf);
+            byte[] totalBuf = encrypt(buf, dd.getKeyIV());
+
+            // 将加密后数据写入ByteBuf
+            sendBuf.writeBytes(totalBuf);
+        }
     }
 
     private static byte[] encrypt(byte[] plaintext, byte[] ivs) {

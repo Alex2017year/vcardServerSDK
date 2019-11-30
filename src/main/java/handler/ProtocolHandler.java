@@ -1,6 +1,7 @@
 package handler;
 
 
+import bean.ServerBaseInfo;
 import bean.VCardDevice;
 import bean.IPAddressPair;
 import global.Constants;
@@ -26,17 +27,10 @@ public class ProtocolHandler implements IProtocolHandler {
         return ProtocolHandlerInstance.INSTANCE;
     }
 
-    /// telegram and status events waiting for pickup by
-    /// the ***Handler
-    // private BlockingQueue<VCardEvent> events = new LinkedBlockingQueue<>();
-
-    // 设备信息表
     // deviceId <---> VCardDevice
     private Map<Integer, VCardDevice> deviceTable = new ConcurrentHashMap<>();
 
-    // 设备ID映射到对应的channel
     // deviceId <---> channel
-    // 根据相关的deviceId查询相应的通道
     private Map<Integer, Channel> channelMap = new ConcurrentHashMap<>();
 
     // channel <---> VCardDevice
@@ -44,6 +38,8 @@ public class ProtocolHandler implements IProtocolHandler {
 
     // SDK提供的回调，用于报告client的建立连接/连接丢失/其他信息等
     private IClientStatusListener mListener;
+
+    private ServerBaseInfo serverBaseInfo = new ServerBaseInfo(); // 服务器端基本信息
 
     @Override
     public boolean initialize(IClientStatusListener listener) {
@@ -82,23 +78,30 @@ public class ProtocolHandler implements IProtocolHandler {
 
     @Override
     public void addNewDevice(Channel channel, VCardMessage message) {
-        // 首次出现的设备
         if (!channelDeviceIdTable.containsKey(channel)) {
+            // note: here, maye be deviceId=0!
             VCardDevice vcardDevice = new VCardDevice(message.getHeader().getDeviceId());
             vcardDevice.setStatus(Constants.ConnectionStatus.HEALTHY);
-
             vcardDevice.setChannel(channel);
             InetSocketAddress address = (InetSocketAddress) channel.localAddress();
             vcardDevice.setCurIPAddress(new IPAddressPair(address.getHostName(), address.getPort()));
 
             channelDeviceIdTable.put(channel, vcardDevice);
-            deviceTable.put(vcardDevice.getDeviceId(), vcardDevice);
 
+            // handle message body
+            vcardDevice.updateDeviceLoginInfo(message);
 
-            // 通用API调用者，新增设备出现了
-            // 但是此时设备的ID还是0，所以
-            mListener.onAddDevice(channelDeviceIdTable.get(channel).getDeviceId());
-            // setData(new VCardEvent(vcardDevice.getDeviceId(), message, true));
+            // report to API caller
+            if (message.getHeader().getDeviceId() == 0) {
+                mListener.onAddDevice(vcardDevice.getCurIPAddress().toString());
+
+                // send request to get deviceId
+                VCardMessage command = vcardDevice.buildGetDeviceIdCmd();
+                channel.writeAndFlush(command);
+
+            } else {
+                mListener.onAddDevice(String.valueOf(message.getHeader().getDeviceId()));
+            }
         }
     }
 
@@ -115,12 +118,14 @@ public class ProtocolHandler implements IProtocolHandler {
 
             vcardDevice.setStatus(Constants.ConnectionStatus.HEALTHY);
             if (vcardDevice.getChannel() != channel) {
-                // log("")
+                // log("");
                 // 某个设备通道变化了，说明IP和port变化，需要及时更新
                 vcardDevice.setChannel(channel);
                 InetSocketAddress address = (InetSocketAddress) channel.localAddress();
                 vcardDevice.setCurIPAddress(new IPAddressPair(address.getHostName(), address.getPort()));
             }
+
+            vcardDevice.acknowledgeCmd(message);
 
             // 更新设备状态
             // setData(new VCardEvent(deviceId, Constants.ConnectionStatus.HEALTHY));
@@ -160,6 +165,23 @@ public class ProtocolHandler implements IProtocolHandler {
             return false;
 
         // 将数据保存到队列中
-        return cardDevice.putCmd(cmd, callback);
+        cardDevice.putCmd(cmd, callback);
+        return true;
+    }
+
+    @Override
+    public ServerBaseInfo getServerBaseInfo() {
+        return serverBaseInfo;
+    }
+
+    @Override
+    public void updateServerBaseInfo(short serverNo) {
+        serverBaseInfo.setServerNo(serverNo);
+    }
+
+    @Override
+    public void updateServerBaseInfoWithOEMCode(String oemCode) {
+        // 这里重新构造签名
+        serverBaseInfo.setOemCodeServer(oemCode);
     }
 }

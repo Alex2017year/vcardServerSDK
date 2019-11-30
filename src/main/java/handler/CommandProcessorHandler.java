@@ -105,6 +105,10 @@ public class CommandProcessorHandler implements ICommandProcessor {
         cmd.setAppData(null);
         cmd.setHeader(header);
 
+        if (!ProtocolHandler.getInstance().sendCommand(cmd, callback)) {
+            return CommandParameterCheck.FAILED_CONNECTION;
+        }
+
         return CommandParameterCheck.NORMAL;
     }
 
