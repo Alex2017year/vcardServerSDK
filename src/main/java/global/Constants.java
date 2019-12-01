@@ -14,6 +14,9 @@ public class Constants {
         }
     }
 
+    public static final byte FORCE_UPDATE = 0x25;
+    public static final int TIME_DIFFERENCE = 5*60; // 设备端时间与服务器端时间差5min，立马向设备端更新时间
+
     public final static byte DEVICES_PARAMETER_CATEGORY = (byte) 0x01;
     public final static byte DEVICES_CONTROL_CATEGORY = (byte) 0x02;
     public final static byte DEVICES_AUTHORIZATION_CATEGORY = (byte) 0x03;

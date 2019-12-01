@@ -101,7 +101,7 @@ public class NettyServer implements INettyServer, IServerHandler {
                 }
 
                 @Override
-                public void onAddDevice(int deviceId) {
+                public void onAddDevice(String deviceId) {
                 }
 
                 @Override

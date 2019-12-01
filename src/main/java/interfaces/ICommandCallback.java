@@ -1,6 +1,6 @@
 package interfaces;
 
-public interface ICommandCallback {
+public interface ICommandCallback<E> {
 
     enum ResultCode {
         OK(0x0), // ok
@@ -16,32 +16,8 @@ public interface ICommandCallback {
         }
     }
 
-    // 设备基本信息数据结构
-    class DeviceBaseInfo {
-        public DeviceBaseInfo() {}
-
-        public DeviceBaseInfo(int deviceType, String version, short flashVolume,
-                              String deviceAlias, short agentCode) {
-            this.deviceType = deviceType;
-            this.version = version;
-            this.flashVolume = flashVolume;
-            this.deviceAlias = deviceAlias;
-            this.agentCode = agentCode;
-        }
-
-        public int deviceType;
-        public String version;
-        public short flashVolume;
-        public String deviceAlias; // UTF-8
-        public short agentCode; //
-    }
-
     /**
      * 异步回调接口
      */
-    void process(Object response);
-
-    void process(DeviceBaseInfo response);
-
-    void process(ResultCode resultCode);
+    void process(E response);
 }

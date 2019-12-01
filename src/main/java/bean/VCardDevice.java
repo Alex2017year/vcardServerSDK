@@ -1,6 +1,5 @@
 package bean;
 
-import global.Commands;
 import global.Constants;
 import handler.ProtocolHandler;
 import interfaces.ICommandCallback;
@@ -13,9 +12,7 @@ import utils.StringUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
-import java.util.Deque;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static bean.DeviceLoginInfo.LoginReason.*;
 import static global.Commands.*;
@@ -46,30 +43,37 @@ public class VCardDevice {
 
     // 外界发送命令与其回调
     // 是不是可以使用命令的序列号作为一种标识
-    private Map<VCardMessage, ICommandCallback> cmdMapToCallback;
+    private Map<CommandIdentifier, ICommandCallback> cmdMapToCallback;
     private Deque<VCardMessage> commandList; // 命令队列，接收外界的命令请求的缓存队列
-    VCardMessage currentCommand; // 当前的命令，还未进行确认的命令
+    Set<CommandIdentifier> waitingConfirmationCmd  = new HashSet<>(); // 等待确认的命令集合
 
     /**
      * 收到device client response的命令进行确认，并发送下一个命令
      * @param msg 这个从client返回的message，通过对比发送请求中的命令序列号与当前命令信息的序列号，接着再调用callback返回API调用者
      */
     public void acknowledgeCmd(VCardMessage msg) {
-        if (msg.getHeader().getDeviceId() == currentCommand.getHeader().getDeviceId() &&
-            msg.getHeader().getCmdSequence() == currentCommand.getHeader().getCmdSequence()) {
-            decodeMessage(msg);
+        if (msg.getHeader().getDeviceId() == this.deviceId) {
+            CommandIdentifier cmdIdentifier = new CommandIdentifier(msg.getHeader().getControlCode(),
+                                                                    msg.getHeader().getCmdSequence());
+            if (waitingConfirmationCmd.remove(cmdIdentifier)) {
+                decodeMessage(cmdIdentifier, msg);
+            } else {
+                // log("not find the response in waitingConfirmationCommand set"); // 打印出命令明细
+            }
         }
 
         if (commandList.size() > 0) {
-            currentCommand = commandList.pollFirst();
-            if (!ProtocolHandler.getInstance().sendData(currentCommand)) {
-                // log("failed to send command:" + deviceId + currentCommand.getHeader().getControlCode());
+            VCardMessage cmd = commandList.pollFirst();
+            if (ProtocolHandler.getInstance().sendData(cmd)) {
+                waitingConfirmationCmd.add(new CommandIdentifier(msg.getHeader().getControlCode(), msg.getHeader().getCmdSequence()));
+            } else {
+                // log("failed to send command:" + deviceId + cmd.getHeader().getControlCode());
             }
         }
     }
 
     // 解析应用数据
-    private void decodeMessage(VCardMessage msg) {
+    private void decodeMessage(CommandIdentifier commandIdentifier, VCardMessage msg) {
         ByteBuf appData = (ByteBuf) msg.getAppData();
         ControlCode codeTag = msg.getHeader().getControlCode(); // 用于标识每种命令请求
 
@@ -118,6 +122,7 @@ public class VCardDevice {
             appData.readBytes(byteArr);
             deviceLoginInfo.setSignature(new String(byteArr));
 
+            cmdMapToCallback.remove(commandIdentifier);
         } else if (codeTag == GET_DEVICE_ID_CMD) {
             if (this.deviceId == 0) {
                 this.deviceId = msg.getHeader().getDeviceId();
@@ -130,24 +135,32 @@ public class VCardDevice {
                 }
             }
 
+            cmdMapToCallback.remove(commandIdentifier);
         } else if (codeTag == GET_DEVICE_BASE_INFO_CMD) {
-            ICommandCallback.DeviceBaseInfo deviceBaseInfo = new ICommandCallback.DeviceBaseInfo();
-            deviceBaseInfo.deviceType = appData.readShort();
-            deviceBaseInfo.version = StringUtils.changeToVersion(appData.readShort());
-            deviceBaseInfo.flashVolume = appData.readShort();
+            DeviceBaseInfo deviceBaseInfo = new DeviceBaseInfo();
+            deviceBaseInfo.setDeviceType(appData.readShort());
+            deviceBaseInfo.setVersion(StringUtils.changeToVersion(appData.readShort()));
+            deviceBaseInfo.setFlashVolume(appData.readShort());
 
             byte[] byteArr = new byte[32];
             appData.readBytes(byteArr);
             try {
-                deviceBaseInfo.deviceAlias = new String(byteArr, "utf-8");
+                deviceBaseInfo.setDeviceAlias(new String(byteArr, "utf-8"));
             } catch (UnsupportedEncodingException e) {
-                deviceBaseInfo.deviceAlias = "";
+                deviceBaseInfo.setDeviceAlias("");
                 // e.printStackTrace();
             }
 
-            deviceBaseInfo.agentCode = appData.readShort();
-            cmdMapToCallback.get(currentCommand).process(deviceBaseInfo);
-        } else if (codeTag == SET_DEVICE_ALIAS_CMD) {
+            deviceBaseInfo.setAgentCode(appData.readShort());
+
+            popCmd(commandIdentifier, deviceBaseInfo);
+        } else if (codeTag == SET_DEVICE_ALIAS_CMD ||
+                    codeTag == SET_SINGLE_SYSTEM_CONFIGURATION_CMD ||
+                    codeTag == SET_ALL_SYSTEM_CONFIGURATION_CMD ||
+                    codeTag == SET_SYSTEM_TIME_CMD ||
+                    codeTag == APPLICATION_UPDATE_CMD ||
+                    codeTag == SET_OR_CODE_URL_CMD ||
+                    codeTag == SET_APPLICATION_KEY_CMD) {
             byte response = appData.readByte();
 
             ICommandCallback.ResultCode resultCode;
@@ -172,10 +185,106 @@ public class VCardDevice {
                     break;
             }
 
-            cmdMapToCallback.get(currentCommand).process(resultCode);
+            popCmd(commandIdentifier, resultCode);
         } else if (codeTag == GET_DEVICE_STATUS_CMD) {
+            DeviceStateInfo deviceStateInfo = new DeviceStateInfo();
+            deviceStateInfo.setRunningTime(appData.readInt());
+            deviceStateInfo.setLocalTime(appData.readInt());
 
+            byte payload = appData.readByte();
+            deviceStateInfo.setSystemLoad((byte) Integer.parseInt(payload+"", 16));
+            deviceStateInfo.setTotalMemory(appData.readShort());
+            deviceStateInfo.setAvailableMemory(appData.readShort());
+            deviceStateInfo.setSharedMemory(appData.readShort());
+            deviceStateInfo.setCacheMemory(appData.readShort());
+            deviceStateInfo.setPower(appData.readByte());
+            deviceStateInfo.setTemperature(appData.readByte());
 
+            popCmd(commandIdentifier, deviceStateInfo);
+
+        }  else if (codeTag == GET_ALL_SYSTEM_CONFIGURATION_CMD) {
+            SystemConfiguration.AllConfiguration allConfiguration =  new SystemConfiguration.AllConfiguration();
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.AUTOMATIC_SCREEN_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.SCREENSAVER_FACE_IDENTIFICATION_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.STRANGER_RECORD_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.STRANGER_RECORD_UPLOAD_INTERVAL,
+                    appData.readInt());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.STRANGER_RECORD_UPLOAD_MODEL,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.DOORBELL_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.PHOTOSENSITIVE_LIGHT_OFF_THRESHOLD,
+                    appData.readInt());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.PHOTOSENSITIVE_LIGHT_ON_THRESHOLD,
+                    appData.readInt());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.SET_PASSWORD,
+                    appData.readInt());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.POPUP_DIALOG_DURATION,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.WHITE_LIGHT_HIGHLIGHT_WIDE_PERCENTAGE,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.WHITE_LIGHT_LOWLIGHT_WIDE_PERCENTAGE,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.RED_LIGHT_HIGHLIGHT_WIDE_PERCENTAGE,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.RED_LIGHT_LOWLIGHT_WIDE_PERCENTAGE,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.STRANGE_FACE_HINT_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.AUTO_REBOOT_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.AUTO_REBOOT_TIME,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.AUTO_SCREENSAVER_ANIMATION_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.AUTO_ENTERING_SCREENSAVER_TIME,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.VOICE_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.WIPING_CARD_AND_FACE_SWITCH,
+                    appData.readByte());
+            allConfiguration.setConfiguration(SystemConfiguration.ConfigAddress.WHETHER_ADD_CARD_AUTHORIZATION,
+                    appData.readByte());
+
+            popCmd(commandIdentifier, allConfiguration);
+        } else if (codeTag == GET_APPLICATION_KEY_CMD) {
+            ArrayList<ApplicationKey> applicationKeyArr = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                ApplicationKey applicationKey = new ApplicationKey();
+                byte[] keyBytes = null;
+                switch(appData.readByte()) {
+                    case 0:
+                        keyBytes = new byte[ApplicationKey.KEY_SIZE];
+                        appData.readBytes(keyBytes);
+                        applicationKey.setKeyCode(ApplicationKey.KeyType.CARD_READER_KEY, new String(keyBytes));
+                        break;
+                    case 1:
+                        keyBytes = new byte[ApplicationKey.KEY_SIZE];
+                        appData.readBytes(keyBytes);
+                        applicationKey.setKeyCode(ApplicationKey.KeyType.QR_CODE_KEY, new String(keyBytes));
+                        break;
+                    case 2:
+                        keyBytes = new byte[ApplicationKey.OEMCODE_SIZE];
+                        appData.readBytes(keyBytes);
+                        applicationKey.setKeyCode(ApplicationKey.KeyType.OEMCODE_THIRDPARTY_DEVICE, new String(keyBytes));
+                        break;
+                }
+                applicationKeyArr.add(applicationKey);
+            }
+
+            popCmd(commandIdentifier, applicationKeyArr);
+        } else if (codeTag == GET_UPLOAD_ADDRESS_CMD) {
+            UploadAddress uploadAddress = new UploadAddress();
+            uploadAddress.setFunId(appData.readByte());
+
+            byte[] arr = new byte[appData.readShort()];
+            appData.readBytes(arr);
+            uploadAddress.setAddress(new String(arr));
+
+            popCmd(commandIdentifier, uploadAddress);
         }
 
     }
@@ -195,10 +304,25 @@ public class VCardDevice {
     }
 
     public void putCmd(VCardMessage cmd, ICommandCallback callback) {
-        cmdMapToCallback.put(cmd, callback);
+        cmdMapToCallback.put(new CommandIdentifier(cmd.getHeader().getControlCode(), cmd.getHeader().getCmdSequence()),
+                            callback);
+
         commandList.addLast(cmd);
+        VCardMessage temp = commandList.pollFirst();
+        if (ProtocolHandler.getInstance().sendData(temp)) {
+            waitingConfirmationCmd.add(new CommandIdentifier(cmd.getHeader().getControlCode(),
+                                        cmd.getHeader().getCmdSequence()));
+        } else {
+            // log("failed to send command:" + deviceId + ":" + temp.getHeader().getControlCode());
+        }
     }
 
+    private <T> void popCmd(CommandIdentifier cmdIdentifier, T response) {
+        ICommandCallback callback = cmdMapToCallback.remove(cmdIdentifier);
+        if (callback != null) {
+            callback.process(response);
+        }
+    }
 
     public VCardMessage buildGetDeviceIdCmd() {
         VCardMessage request = new VCardMessage();
@@ -210,12 +334,12 @@ public class VCardDevice {
         request.setAppData(null);
 
         // set the current command
-        currentCommand = request;
+        waitingConfirmationCmd.add(new CommandIdentifier(GET_DEVICE_ID_CMD, request.getHeader().getCmdSequence()));
         return request;
     }
 
     public void updateDeviceLoginInfo(VCardMessage msg) {
-        decodeMessage(msg);
+        decodeMessage(null, msg);
     }
 
 

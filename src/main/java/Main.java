@@ -1,3 +1,5 @@
+import bean.DeviceBaseInfo;
+import bean.DeviceStateInfo;
 import interfaces.*;
 
 public class Main {
@@ -30,14 +32,33 @@ public class Main {
             }
         });
         // 命令执行器
-        ICommandProcessor commandExecutor= server.getCommandProcessor();
+        ICommandProcessor commandExecutor = server.getCommandProcessor();
 
         int deviceId = 9999;
-        commandExecutor.requestDeviceBaseInfo(deviceId, new CommandCallbackAdapter() {
+        commandExecutor.requestDeviceBaseInfo(deviceId, new ICommandCallback<DeviceBaseInfo>() {
             @Override
             public void process(DeviceBaseInfo response) {
                 // 做业务处理
             }
         });
+
+        commandExecutor.requestDeviceState(deviceId, new ICommandCallback<DeviceStateInfo>() {
+
+            @Override
+            public void process(DeviceStateInfo response) {
+
+            }
+        });
+
+        String alias = "";
+        commandExecutor.requestSetDeviceAlias(deviceId, alias, new ICommandCallback<ICommandCallback.ResultCode>() {
+
+            @Override
+            public void process(ResultCode response) {
+
+            }
+        });
     }
+
+
 }

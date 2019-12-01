@@ -1,12 +1,15 @@
 package interfaces;
 
+import bean.SystemConfiguration;
+
 public interface ICommandProcessor {
 
     enum CommandParameterCheck {
         NORMAL(0),
         DEVICE_NOT_FOUND(1),
         PARATER_ERROR(2),
-        FAILED_CONNECTION(3);
+        FAILED_CONNECTION(3),
+        NOT_IMPLEMENT(4);
 
         private int value;
         CommandParameterCheck(int value) { this.value = value; }
@@ -68,39 +71,43 @@ public interface ICommandProcessor {
 
     // 设备参数设置
     // 确定对外接口
-    // CommandParameterCheck requestDeviceId(int deviceId, CommandCallbackAdapter callbackAdapter); // 这个命令不对外开发，由服务器内部触发
+    // CommandParameterCheck requestDeviceId(int deviceId, ICommandCallback callbackAdapter); // 这个命令不对外开发，由服务器内部触发
 
-
-    CommandParameterCheck requestDeviceBaseInfo(int deviceId, CommandCallbackAdapter callbackAdapter);
-    CommandParameterCheck requestSetDeviceAlias(int deviceId, String deviceAlias, CommandCallbackAdapter callbackAdapter);
-    CommandParameterCheck requestDeviceStatus(int deviceId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestDeviceBaseInfo(int deviceId, ICommandCallback callbackAdapter);
+    CommandParameterCheck requestSetDeviceAlias(int deviceId, String deviceAlias, ICommandCallback callbackAdapter);
+    CommandParameterCheck requestDeviceState(int deviceId, ICommandCallback callbackAdapter);
 
     // set different system configurations
-    CommandParameterCheck requestSystemConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter);
-    CommandParameterCheck requestSystemAllConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestSystemSingleConfiguration(int deviceId, SystemConfiguration.ByteConfiguration config,
+                                                           ICommandCallback callbackAdapter);
+    CommandParameterCheck requestSystemSingleConfiguration(int deviceId, SystemConfiguration.IntegerConfiguration config,
+                                                           ICommandCallback callbackAdapter);
+
+    CommandParameterCheck requestSystemAllConfiguration(int deviceId, SystemConfiguration.AllConfiguration config,ICommandCallback callbackAdapter);
 
     // 读取系统配置
-    CommandParameterCheck requestReadSystemAllConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestReadSystemAllConfiguration(int deviceId, ICommandCallback callbackAdapter);
     // 设置系统时间
-    CommandParameterCheck requestSetSystemTime(int deviceId, CommandCallbackAdapter callbackAdapter);
-    // 初始化设备
-    CommandParameterCheck requestInitializeDevice(int deviceId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestSetSystemTime(int deviceId, int seconds, ICommandCallback callbackAdapter);
+    // 初始化设备(未实现)
+    CommandParameterCheck requestInitializeDevice(int deviceId, ICommandCallback callbackAdapter);
 
     // 设备通信心跳 -- 这个设备主动发起，服务端被动响应（不向外界提供接口）
 
-    CommandParameterCheck requestUpdateApplication(int deviceId, boolean forceUpdate, short version, String md5, String url,CommandCallbackAdapter callbackAdapter);
-    CommandParameterCheck requestSetOrCodeUrl(int deviceId, String url, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestUpdateApplication(int deviceId, boolean forceUpdate, short version, String md5, String url,
+                                                   ICommandCallback callbackAdapter);
+    CommandParameterCheck requestSetOrCodeUrl(int deviceId, String url, ICommandCallback callbackAdapter);
 
     // 获取应用密钥
-    CommandParameterCheck requestGetApplicationKey(int deviceId, short funId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestGetApplicationKey(int deviceId, byte funId, ICommandCallback callbackAdapter);
 
     // 设置应用密钥
-    CommandParameterCheck requestSetApplicationKey(int deviceId, short funId, String key, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestSetApplicationKey(int deviceId, byte funId, String key, ICommandCallback callbackAdapter);
 
     // 设置上传地址
-    CommandParameterCheck requestSetUploadAddress(int deviceId, short funId, String url, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestSetUploadAddress(int deviceId, byte funId, String url, ICommandCallback callbackAdapter);
 
     // 获取上传地址
-    CommandParameterCheck requestGetUploadAddress(int deviceId, short funId, CommandCallbackAdapter callbackAdapter);
+    CommandParameterCheck requestGetUploadAddress(int deviceId, byte funId, ICommandCallback callbackAdapter);
     
 }

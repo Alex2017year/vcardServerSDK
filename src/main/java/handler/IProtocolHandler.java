@@ -11,7 +11,6 @@ public interface IProtocolHandler {
 
     boolean initialize(IClientStatusListener listener);
     void reportClientMsg(Channel channel, String msg);
-    // void addDevice(int deviceId);
 
     // 查找通道是否，有对应的 VCardDevice
     void removeBadDevice(Channel channel);

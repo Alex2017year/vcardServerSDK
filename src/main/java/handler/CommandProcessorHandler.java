@@ -1,96 +1,31 @@
 package handler;
 
+import bean.SystemConfiguration;
 import bean.VCardDevice;
 import global.Commands;
-import interfaces.CommandCallbackAdapter;
+import global.Constants;
+import interfaces.ICommandCallback;
 import interfaces.ICommandProcessor;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import protocol.ControlCode;
 import protocol.MessageHeader;
 import protocol.VCardMessage;
 
 public class CommandProcessorHandler implements ICommandProcessor {
-
-    // command type or client request type
-    enum CommandType {
-        // GET_DEVICE_ID_CMD(1),
-        GET_DEVICE_BASE_INFO_CMD(2),
-        SET_DEVICE_ALIAS_CMD(3),
-        GET_DEVICE_STATUS_CMD(4),
-        SET_SYSTEM_CONFIGURATION_CMD(5),
-        GET_SYSTEM_CONFIGURATION(6),
-        SET_SYSTEM_TIME(7),
-        INITIALIZATION_DEVICE(8),
-        DEVICE_HEARTBEAT_COMMUNICATION(9),
-        UPDATE_APPLICATION(10),
-        SET_QRCODE_URL(11),
-        SET_APPLICATION_SECRET_KEY(12),
-        GET_APPLICATION_SECRET_KEY(13),
-        SET_UPLOAD_ADDRESS(14),
-        GET_UPLOAD_ADDRESS(15),
-        RELAY_CONTROL_REMOTE_DOOR(16),
-        DEVICE_LOCK(17),
-        RESTART_DEVICE(18),
-        LOCAL_SET_LOCK(19),
-        RELAY_CONTROL_REMOTE_DOOR_WITH_ORCODE(20),
-        RELAY_CONTROL_REMOTE_DOOR_WITH_USER(21),
-        CLEAR_ALL_AUTHORIZATION_CARD(22),
-        READ_SINGLE_AUTHORIZATION_CARD(23),
-        ADD_AUTHORIZATION_CARD(24),
-        DELETE_AUTHORIZATION_CARD(25),
-        PUSH_TRAFFIC_RECORD(26),
-        PUSH_EVENT(27),
-        REPUBLISH_TRAFFIC_RECORD(28),
-        REPUBLISH_EVENT(29),
-        GET_SDK_INFO(30),
-        SET_FACE_IDENTIFICATION_CONFIGURATION(31),
-        GET_FACE_IDENTIFICATION_CONFIGURATION(32),
-        DELETE_FACE_INFO(33),
-        DOWNLOAD_SDK_AUTHORIZATION_INFO(34),
-        ADD_BACKLIST_SINGLE_FACE(35),
-        ADD_AUTHORIZATION_FACE(36),
-        SEND_TEXT_DATA(37),
-        DELETE_TEXT_DATA(38),
-        DOWNLOAD_MULTIMEDIA_DATA(39),
-        DELETE_MULTIMEDIA_DATA(40),
-        SCREENSAVER_SWITCH(41),
-        SET_SCREENSAVER_CAROUSEL(42),
-        SEND_MULTIMEDIA_DATA(43),
-        SEND_TRAFFICE_SNAPSHOT_(44),
-        SEND_BACKLIST_SNAPSHOT(45),
-        SEND_RECORD_TEXT(46),
-        SEND_STRANGER_FACE_SNAPSHOT(47),
-        SEND_DOORBELL_SNAPSHOT(48),
-        SEND_AUTHORIZED_OFFICER_PASSWORD(49),
-        DELETE_AUTHORIZED_OFFICER_PASSWORD(50),
-        GET_RANDOM_OPEN_PASSWORD(51),
-        OPEN_TOKEN_PASSWORD(52),
-        CLOSE_TOKEN_PASSWORD(53),
-        SET_UI_CONFIGURATION(54),
-        GET_UI_CONFIGURATION(55),
-        SCENE_RESOURCE_CONFIGGURATION(56),
-        SCENE_STATUS_CONTROL(57),
-        SET_DEVICE_TITLE(58);
-
-        private int value;
-        CommandType(int value) { this.value = value; }
-    }
-
     public CommandProcessorHandler() {
     }
 
     /*
     @Override
-    public CommandParameterCheck requestDeviceId(int deviceId, CommandCallbackAdapter callback) {
+    public CommandParameterCheck requestDeviceId(int deviceId, ICommandCallback callback) {
         if(deviceId < 0) return CommandParameterCheck.PARATER_ERROR;
-
         // 直接在这里进行数据的封装
         VCardMessage cmd;
-
-
         return CommandParameterCheck.NORMAL;
     }*/
 
-    @Override
-    public CommandParameterCheck requestDeviceBaseInfo(int deviceId, CommandCallbackAdapter callback) {
+    private CommandParameterCheck commandTemplate(int deviceId, ControlCode cmdType, Object appData, ICommandCallback callback) {
         if (deviceId <= 0) return CommandParameterCheck.PARATER_ERROR;
 
         VCardDevice cardDevice = ProtocolHandler.getInstance().find(deviceId);
@@ -98,11 +33,11 @@ public class CommandProcessorHandler implements ICommandProcessor {
 
         VCardMessage cmd = new VCardMessage();
         MessageHeader header = new MessageHeader();
-        header.setControlCode(Commands.GET_DEVICE_BASE_INFO_CMD);
+        header.setControlCode(cmdType);
         header.setDeviceId(deviceId);
         header.setInfoCode(MessageHeader.MessageType.SERVER_SENDER, cardDevice.nextCmdSequence());
 
-        cmd.setAppData(null);
+        cmd.setAppData(appData);
         cmd.setHeader(header);
 
         if (!ProtocolHandler.getInstance().sendCommand(cmd, callback)) {
@@ -113,68 +48,192 @@ public class CommandProcessorHandler implements ICommandProcessor {
     }
 
     @Override
-    public CommandParameterCheck requestSetDeviceAlias(int deviceId, String deviceAlias, CommandCallbackAdapter callback) {
-        return CommandParameterCheck.NORMAL;
+    public CommandParameterCheck requestDeviceBaseInfo(int deviceId, ICommandCallback callback) {
+        return commandTemplate(deviceId, Commands.GET_DEVICE_BASE_INFO_CMD, null, callback);
     }
 
     @Override
-    public CommandParameterCheck requestDeviceStatus(int deviceId, CommandCallbackAdapter callback) {
-        return CommandParameterCheck.NORMAL;
+    public CommandParameterCheck requestSetDeviceAlias(int deviceId, String deviceAlias, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeBytes(deviceAlias.getBytes());
+        return commandTemplate(deviceId, Commands.SET_DEVICE_ALIAS_CMD, appData, callback);
     }
 
     @Override
-    public CommandParameterCheck requestSystemConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestDeviceState(int deviceId, ICommandCallback callback) {
+        return commandTemplate(deviceId, Commands.GET_DEVICE_STATUS_CMD, null, callback);
     }
 
     @Override
-    public CommandParameterCheck requestSystemAllConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestSystemSingleConfiguration(int deviceId, SystemConfiguration.ByteConfiguration config,
+                                                                  ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(config.getAddress());
+        appData.writeByte(config.getConfigurationValue());
+        return commandTemplate(deviceId, Commands.SET_SINGLE_SYSTEM_CONFIGURATION_CMD, appData, callback);
+    }
+
+
+    @Override
+    public CommandParameterCheck requestSystemSingleConfiguration(int deviceId, SystemConfiguration.IntegerConfiguration config,
+                                                                  ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(config.getAddress());
+        appData.writeInt(config.getConfigurationValue());
+        return commandTemplate(deviceId, Commands.SET_SINGLE_SYSTEM_CONFIGURATION_CMD, null, callback);
     }
 
     @Override
-    public CommandParameterCheck requestReadSystemAllConfiguration(int deviceId, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestSystemAllConfiguration(int deviceId, SystemConfiguration.AllConfiguration config, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(config.getAutomaticScreenSwitchConfig().getAddress());
+        appData.writeByte(config.getAutomaticScreenSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getScreensaverFaceIdentificationSwitchConfig().getAddress());
+        appData.writeByte(config.getScreensaverFaceIdentificationSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getScreensaverFaceIdentificationSwitchConfig().getAddress());
+        appData.writeByte(config.getScreensaverFaceIdentificationSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getStrangerRecordUploadIntervalConfig().getAddress());
+        appData.writeInt(config.getStrangerRecordUploadIntervalConfig().getConfigurationValue());
+
+        appData.writeByte(config.getStrangerRecordUploadModelConfig().getAddress());
+        appData.writeByte(config.getStrangerRecordUploadModelConfig().getConfigurationValue());
+
+        appData.writeByte(config.getDoorbellSwitchConfig().getAddress());
+        appData.writeByte(config.getDoorbellSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getPhotosensitiveLightOffThresholdConfig().getAddress());
+        appData.writeInt(config.getPhotosensitiveLightOffThresholdConfig().getConfigurationValue());
+
+        appData.writeByte(config.getPhotosensitiveLightOnThresholdConfig().getAddress());
+        appData.writeInt(config.getPhotosensitiveLightOnThresholdConfig().getConfigurationValue());
+
+        appData.writeByte(config.getSetPasswordConfig().getAddress());
+        appData.writeInt(config.getSetPasswordConfig().getConfigurationValue());
+
+        appData.writeByte(config.getPopupDialogDurationConfig().getAddress());
+        appData.writeByte(config.getPopupDialogDurationConfig().getConfigurationValue());
+
+        appData.writeByte(config.getWhiteLightHighlightWidePercentageConfig().getAddress());
+        appData.writeByte(config.getWhiteLightHighlightWidePercentageConfig().getConfigurationValue());
+
+        appData.writeByte(config.getWhiteLightLowlightWidePercentageConfig().getAddress());
+        appData.writeByte(config.getWhiteLightLowlightWidePercentageConfig().getConfigurationValue());
+
+        appData.writeByte(config.getRedLightHighlightWidePercentageConfig().getAddress());
+        appData.writeByte(config.getRedLightHighlightWidePercentageConfig().getConfigurationValue());
+
+        appData.writeByte(config.getRedLightLowlightWidePercentageConfig().getAddress());
+        appData.writeByte(config.getRedLightLowlightWidePercentageConfig().getConfigurationValue());
+
+        appData.writeByte(config.getStrangeFaceHintSwitchConfig().getAddress());
+        appData.writeByte(config.getStrangeFaceHintSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getAutoRebootSwitchConfig().getAddress());
+        appData.writeByte(config.getAutoRebootSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getAutoRebootTimeConfig().getAddress());
+        appData.writeByte(config.getAutoRebootTimeConfig().getConfigurationValue());
+
+        appData.writeByte(config.getAutoScreensaverAnimationSwitchConfig().getAddress());
+        appData.writeByte(config.getAutoScreensaverAnimationSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getAutoEnteringScreensaverTimeConfig().getAddress());
+        appData.writeByte(config.getAutoEnteringScreensaverTimeConfig().getConfigurationValue());
+
+        appData.writeByte(config.getVoiceSwitchConfig().getAddress());
+        appData.writeByte(config.getVoiceSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getWipingCardAndFaceSwitchConfig().getAddress());
+        appData.writeByte(config.getWipingCardAndFaceSwitchConfig().getConfigurationValue());
+
+        appData.writeByte(config.getWhetherAddCardAuthorizationConfig().getAddress());
+        appData.writeByte(config.getWhetherAddCardAuthorizationConfig().getConfigurationValue());
+
+        return commandTemplate(deviceId, Commands.SET_ALL_SYSTEM_CONFIGURATION_CMD, appData, callback);
     }
 
     @Override
-    public CommandParameterCheck requestSetSystemTime(int deviceId, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestReadSystemAllConfiguration(int deviceId, ICommandCallback callback) {
+        return commandTemplate(deviceId, Commands.GET_ALL_SYSTEM_CONFIGURATION_CMD, null, callback);
     }
 
     @Override
-    public CommandParameterCheck requestInitializeDevice(int deviceId, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestSetSystemTime(int deviceId, int seconds, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeInt(seconds);
+        return commandTemplate(deviceId, Commands.SET_SYSTEM_TIME_CMD, appData, callback);
     }
 
     @Override
-    public CommandParameterCheck requestUpdateApplication(int deviceId, boolean forceUpdate, short version, String md5, String url, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestInitializeDevice(int deviceId, ICommandCallback callback) {
+        return CommandParameterCheck.NOT_IMPLEMENT;
     }
 
     @Override
-    public CommandParameterCheck requestSetOrCodeUrl(int deviceId, String url, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestUpdateApplication(int deviceId, boolean forceUpdate, short version, String md5, String url, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        if (forceUpdate) {
+            appData.writeByte(Constants.FORCE_UPDATE);
+        } else {
+            appData.writeByte(0);
+        }
+        appData.writeShort(version);
+        appData.writeBytes(md5.getBytes());
+        appData.writeShort(url.length());
+        appData.writeBytes(url.getBytes());
+
+        return commandTemplate(deviceId, Commands.APPLICATION_UPDATE_CMD, appData, callback);
     }
 
     @Override
-    public CommandParameterCheck requestGetApplicationKey(int deviceId, short funId, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestSetOrCodeUrl(int deviceId, String url, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(url.length());
+        appData.writeBytes(url.getBytes());
+        return commandTemplate(deviceId, Commands.APPLICATION_UPDATE_CMD, appData, callback);
     }
 
     @Override
-    public CommandParameterCheck requestSetApplicationKey(int deviceId, short funId, String key, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestGetApplicationKey(int deviceId, byte funId, ICommandCallback callback) {
+        if (funId < 0 || funId > 3) return CommandParameterCheck.PARATER_ERROR;
+
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(funId);
+        return commandTemplate(deviceId, Commands.GET_APPLICATION_KEY_CMD, appData, callback);
     }
 
     @Override
-    public CommandParameterCheck requestSetUploadAddress(int deviceId, short funId, String url, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestSetApplicationKey(int deviceId, byte funId, String key, ICommandCallback callback) {
+        if (funId < 0 || funId > 3) return CommandParameterCheck.PARATER_ERROR;
+
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(funId);
+        appData.writeShort(key.length());
+        appData.writeBytes(key.getBytes());
+        return commandTemplate(deviceId, Commands.SET_APPLICATION_KEY_CMD, appData, callback);
     }
 
     @Override
-    public CommandParameterCheck requestGetUploadAddress(int deviceId, short funId, CommandCallbackAdapter callbackAdapter) {
-        return null;
+    public CommandParameterCheck requestSetUploadAddress(int deviceId, byte funId, String url, ICommandCallback callback) {
+        if (funId < 0 || funId > 5 || url == null || url.equals("")) return CommandParameterCheck.PARATER_ERROR;
+
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(funId);
+        appData.writeShort(url.length());
+        appData.writeBytes(url.getBytes());
+        return commandTemplate(deviceId, Commands.SET_UPLOAD_ADDRESS_CMD, appData, callback);
+    }
+
+    @Override
+    public CommandParameterCheck requestGetUploadAddress(int deviceId, byte funId, ICommandCallback callback) {
+        if (funId < 0 || funId > 5) return CommandParameterCheck.PARATER_ERROR;
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(funId);
+
+        return commandTemplate(deviceId, Commands.GET_UPLOAD_ADDRESS_CMD, appData, callback);
     }
 
 }
