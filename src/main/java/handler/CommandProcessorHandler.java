@@ -65,8 +65,8 @@ public class CommandProcessorHandler implements ICommandProcessor {
     }
 
     @Override
-    public CommandParameterCheck requestSystemSingleConfiguration(int deviceId, SystemConfiguration.ByteConfiguration config,
-                                                                  ICommandCallback callback) {
+    public CommandParameterCheck requestSetSystemSingleConfiguration(int deviceId, SystemConfiguration.ByteConfiguration config,
+                                                                     ICommandCallback callback) {
         ByteBuf appData = Unpooled.buffer();
         appData.writeByte(config.getAddress());
         appData.writeByte(config.getConfigurationValue());
@@ -75,8 +75,8 @@ public class CommandProcessorHandler implements ICommandProcessor {
 
 
     @Override
-    public CommandParameterCheck requestSystemSingleConfiguration(int deviceId, SystemConfiguration.IntegerConfiguration config,
-                                                                  ICommandCallback callback) {
+    public CommandParameterCheck requestSetSystemSingleConfiguration(int deviceId, SystemConfiguration.IntegerConfiguration config,
+                                                                     ICommandCallback callback) {
         ByteBuf appData = Unpooled.buffer();
         appData.writeByte(config.getAddress());
         appData.writeInt(config.getConfigurationValue());
@@ -84,7 +84,7 @@ public class CommandProcessorHandler implements ICommandProcessor {
     }
 
     @Override
-    public CommandParameterCheck requestSystemAllConfiguration(int deviceId, SystemConfiguration.AllConfiguration config, ICommandCallback callback) {
+    public CommandParameterCheck requestSetSystemAllConfiguration(int deviceId, SystemConfiguration.AllConfiguration config, ICommandCallback callback) {
         ByteBuf appData = Unpooled.buffer();
         appData.writeByte(config.getAutomaticScreenSwitchConfig().getAddress());
         appData.writeByte(config.getAutomaticScreenSwitchConfig().getConfigurationValue());

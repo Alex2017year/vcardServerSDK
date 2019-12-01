@@ -78,12 +78,12 @@ public interface ICommandProcessor {
     CommandParameterCheck requestDeviceState(int deviceId, ICommandCallback callbackAdapter);
 
     // set different system configurations
-    CommandParameterCheck requestSystemSingleConfiguration(int deviceId, SystemConfiguration.ByteConfiguration config,
-                                                           ICommandCallback callbackAdapter);
-    CommandParameterCheck requestSystemSingleConfiguration(int deviceId, SystemConfiguration.IntegerConfiguration config,
-                                                           ICommandCallback callbackAdapter);
+    CommandParameterCheck requestSetSystemSingleConfiguration(int deviceId, SystemConfiguration.ByteConfiguration config,
+                                                              ICommandCallback callbackAdapter);
+    CommandParameterCheck requestSetSystemSingleConfiguration(int deviceId, SystemConfiguration.IntegerConfiguration config,
+                                                              ICommandCallback callbackAdapter);
 
-    CommandParameterCheck requestSystemAllConfiguration(int deviceId, SystemConfiguration.AllConfiguration config,ICommandCallback callbackAdapter);
+    CommandParameterCheck requestSetSystemAllConfiguration(int deviceId, SystemConfiguration.AllConfiguration config, ICommandCallback callbackAdapter);
 
     // 读取系统配置
     CommandParameterCheck requestReadSystemAllConfiguration(int deviceId, ICommandCallback callbackAdapter);

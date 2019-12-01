@@ -1,6 +1,7 @@
-import bean.DeviceBaseInfo;
-import bean.DeviceStateInfo;
+import bean.*;
 import interfaces.*;
+
+import java.util.ArrayList;
 
 public class Main {
 
@@ -58,6 +59,112 @@ public class Main {
 
             }
         });
+
+        commandExecutor.requestSetSystemSingleConfiguration(deviceId,
+                new SystemConfiguration.ByteConfiguration(SystemConfiguration.ConfigAddress.AUTOMATIC_SCREEN_SWITCH),
+                new ICommandCallback<ICommandCallback.ResultCode>() {
+
+                    @Override
+                    public void process(ResultCode response) {
+
+                    }
+                });
+
+        commandExecutor.requestSetSystemSingleConfiguration(deviceId,
+                new SystemConfiguration.IntegerConfiguration(SystemConfiguration.ConfigAddress.STRANGER_RECORD_UPLOAD_INTERVAL),
+                new ICommandCallback<ICommandCallback.ResultCode>() {
+
+                    @Override
+                    public void process(ResultCode response) {
+
+                    }
+                });
+
+        commandExecutor.requestSetSystemAllConfiguration(deviceId,
+                new SystemConfiguration.AllConfiguration(), new ICommandCallback<ICommandCallback.ResultCode>() {
+
+                    @Override
+                    public void process(ResultCode response) {
+
+                    }
+                });
+
+        commandExecutor.requestReadSystemAllConfiguration(deviceId, new ICommandCallback<SystemConfiguration.AllConfiguration>() {
+            @Override
+            public void process(SystemConfiguration.AllConfiguration response) {
+
+            }
+        });
+
+        int seconds = 0;
+        commandExecutor.requestSetSystemTime(deviceId, seconds, new ICommandCallback<ICommandCallback.ResultCode>() {
+
+            @Override
+            public void process(ResultCode response) {
+
+            }
+        } );
+
+        boolean forceUpdate = true;
+        short version = 20;
+        String md5 = "ababu899ania36694";
+        String url = "http:///************";
+        commandExecutor.requestUpdateApplication(deviceId, forceUpdate, version, md5, url, new ICommandCallback<ICommandCallback.ResultCode>() {
+
+            @Override
+            public void process(ResultCode response) {
+
+            }
+        });
+
+
+        String address = "http:///";
+        commandExecutor.requestSetOrCodeUrl(deviceId, address, new ICommandCallback<ICommandCallback.ResultCode>(){
+
+            @Override
+            public void process(ResultCode response) {
+
+            }
+        });
+
+
+        commandExecutor.requestGetApplicationKey(deviceId, (byte) 0, new ICommandCallback<ArrayList<ApplicationKey>>() {
+
+            @Override
+            public void process(ArrayList<ApplicationKey> response) {
+
+            }
+        });
+
+        String key = "";
+        commandExecutor.requestSetApplicationKey(deviceId, (byte) 0, key, new ICommandCallback<ICommandCallback.ResultCode>() {
+
+            @Override
+            public void process(ResultCode response) {
+
+            }
+        });
+
+        commandExecutor.requestSetUploadAddress(deviceId, (byte) 0, "http:///", new ICommandCallback<ICommandCallback.ResultCode>() {
+
+            @Override
+            public void process(ResultCode response) {
+
+            }
+        });
+
+        commandExecutor.requestGetUploadAddress(deviceId, (byte) 0, new ICommandCallback<UploadAddress>() {
+
+            @Override
+            public void process(UploadAddress response) {
+
+            }
+
+        });
+
+
+
+
     }
 
 
