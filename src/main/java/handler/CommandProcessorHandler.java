@@ -236,4 +236,66 @@ public class CommandProcessorHandler implements ICommandProcessor {
         return commandTemplate(deviceId, Commands.GET_UPLOAD_ADDRESS_CMD, appData, callback);
     }
 
+    @Override
+    public CommandParameterCheck requestControlRemoteByRelay(int deviceId, byte relayId, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(relayId);
+        return commandTemplate(deviceId, Commands.CONTROL_RELAY_CMD, appData, callback);
+    }
+
+    @Override
+    public CommandParameterCheck requestControlRemoteByRelayWithDelay(int deviceId, byte relayId, int msDelay, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(relayId);
+        appData.writeInt(msDelay);
+        return commandTemplate(deviceId, Commands.CONTROL_RELAY_DELAY_CMD, appData, callback);
+    }
+
+    @Override
+    public CommandParameterCheck requestLockDevice(int deviceId, byte relayId, LockMode lockMode, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(relayId);
+        appData.writeInt(lockMode.getValue());
+        return commandTemplate(deviceId, Commands.CONTROL_DEVICE_LOCK_CMD, appData, callback);
+    }
+
+    @Override
+    public CommandParameterCheck requestRebootDevice(int deviceId, ICommandCallback callback) {
+        return commandTemplate(deviceId, Commands.REBOOT_DEVICE_CMD, null, callback);
+    }
+
+    @Override
+    public CommandParameterCheck requestLocalSetLock(int deviceId, LocalLockType localLockType, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(localLockType.getValue());
+        return commandTemplate(deviceId, Commands.SET_LOCAL_LOCK_CMD, null, callback);
+    }
+
+    // 需要进行特殊处理
+    @Override
+    public CommandParameterCheck requestRelayControlWithQRCode(int deviceId, byte relayId, int randomNum, int personId, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(relayId);
+        appData.writeInt(randomNum);
+        appData.writeInt(personId);
+        return commandTemplate(deviceId, Commands.CONTROL_RELAY_BY_ORCODE_CMD, null, callback);
+    }
+
+    @Override
+    public CommandParameterCheck requestRelayControlWithRemoteUser(int deviceId, byte relayId, int personId, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(relayId);
+        appData.writeInt(personId);
+        return commandTemplate(deviceId, Commands.CONTROL_RELAY_BY_REMOTE_USER_CMD, null, callback);
+    }
+
+    @Override
+    public CommandParameterCheck requestRelayControlWithRemoteUserAndDelay(int deviceId, byte relayId, int personId, int msDelay, ICommandCallback callback) {
+        ByteBuf appData = Unpooled.buffer();
+        appData.writeByte(relayId);
+        appData.writeInt(personId);
+        appData.writeInt(msDelay);
+        return commandTemplate(deviceId, Commands.CONTROL_RELAY_BY_REMOTE_USER_WITH_DELAY_CMD, null, callback);
+    }
+
 }

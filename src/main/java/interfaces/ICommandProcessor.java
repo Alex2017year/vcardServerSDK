@@ -109,5 +109,30 @@ public interface ICommandProcessor {
 
     // 获取上传地址
     CommandParameterCheck requestGetUploadAddress(int deviceId, byte funId, ICommandCallback callbackAdapter);
-    
+
+    /* 设备控制命令 -- 这个服务器主动发起调用 */
+    // 继电器控制（远程开门）
+    CommandParameterCheck requestControlRemoteByRelay(int deviceId, byte relayId, ICommandCallback callbackAdapter);
+
+    // 端口控制（指定闭门延时：毫秒）
+    CommandParameterCheck requestControlRemoteByRelayWithDelay(int deviceId, byte relayId, int msDelay, ICommandCallback callbackAdapter);
+
+    // 设备锁定
+    CommandParameterCheck requestLockDevice(int deviceId, byte relayId, LockMode lockMode, ICommandCallback callbackAdapter);
+
+    // 重启设备
+    CommandParameterCheck requestRebootDevice(int deviceId, ICommandCallback callbackAdapter);
+
+    // 本地设置锁定
+    CommandParameterCheck requestLocalSetLock(int deviceId, LocalLockType localLockType, ICommandCallback callbackAdapter);
+
+    // 继电器控制（扫二维码远程开门）
+    // Note: 设备随机数，需要确认下
+    CommandParameterCheck requestRelayControlWithQRCode(int deviceId, byte relayId, int randomNum, int personId, ICommandCallback callbackAdapter);
+
+    // 继电器控制（用户远程开门）
+    CommandParameterCheck requestRelayControlWithRemoteUser(int deviceId, byte relayId, int personId, ICommandCallback callbackAdapter);
+
+    // 继电器控制（用户远程开门，且指定闭门延迟）
+    CommandParameterCheck requestRelayControlWithRemoteUserAndDelay(int deviceId, byte relayId, int personId, int msDelay, ICommandCallback callbackAdapter);
 }

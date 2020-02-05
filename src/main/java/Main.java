@@ -162,6 +162,13 @@ public class Main {
 
         });
 
+        commandExecutor.requestControlRemoteByRelay(deviceId, (byte) 0, new ICommandCallback<ICommandCallback.ResultCode>() {
+
+            @Override
+            public void process(ResultCode response) {
+
+            }
+        });
 
 
 
